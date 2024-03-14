@@ -2,6 +2,7 @@
 //CECI N'EST QU'UN EXEMPLE POUR TESTER SI BBOP EST BIEN INSTALLER
 ////////////////////////////////////////////////////////////////////
 #include <BBOP/Graphics/bbopMathClass.h>
+#include <BBOP/Graphics/fontsClass.h>
 #include <BBOP/Graphics/shapeClass.h>
 #include <BBOP/Graphics/textureClass.h>
 #include <GL/glew.h>
@@ -10,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <irrklang/irrKlang.h>
 
@@ -58,12 +60,29 @@ int main() {
 
   RectangleShape box;
   box.setPosition(Vector2f(150.0f,150.0f));
-  box.setSize(Vector2f(300.0f,300.0f));
+  box.setSize(Vector2f(50.0f,50.0f));
   box.setColor(Vector3i(255,150,200));
 
   vector<RectangleShape> bulletList;
   vector<Vector2f> bulletMove;
-  Vector2f bulletSpeed(50.0f,50.0f);
+  Vector2f bulletSpeed(5.0f,5.0f);
+
+  Font arialFont(48, "fonts/arial.ttf");
+
+  int munCPT = 12;
+  string munCPTstr = to_string(munCPT);
+  TexteBox munText(munCPTstr.c_str(), &arialFont);
+  munText.setPosition(Vector2f(0.0f,100.0f));
+  munText.setColor(Vector3i(255,0,0));
+
+  double FPS = 0;
+  double lastTime = glfwGetTime();
+  double actualTime;
+  double deltaTime;
+  string FPSstr = to_string(FPS);
+  TexteBox fpsText(FPSstr.c_str(), &arialFont);
+  fpsText.setPosition(Vector2f(0.0f,50.0f));
+  fpsText.setColor(Vector3i(255,0,0));
 
   double timefromLastShoot = glfwGetTime();
   double timefromReload = glfwGetTime();
@@ -96,9 +115,10 @@ int main() {
     for(int b = 0; b < bulletList.size(); b++){
       defaultScene.Draw(bulletList[b]);
       bulletList[b].move(bulletMove[b]);
-      if (!defaultCam.isInCamView(bulletList[b])){
+      if (!defaultCam.isInCamView(bulletList[b]) || bulletList[b].getCollisionBox()->checkWithRotation(box.getCollisionBox())){
         bulletList.erase(bulletList.begin()+b);
         bulletMove.erase(bulletMove.begin()+b);
+        cout << "he" << endl;
       }
     }
 
@@ -131,6 +151,7 @@ int main() {
 
     if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
       if(glfwGetTime()-timefromReload>1.5){
+        munCPT = 12;
         timefromReload = glfwGetTime();
         SoundEngine->play2D("sound/gun-reload.wav",false);
       }
@@ -154,7 +175,8 @@ int main() {
     test.setRotation(player.getRotation()-M_PI);
 
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
-      if (glfwGetTime()-timefromLastShoot>0.2){
+      if (glfwGetTime()-timefromLastShoot>0.2 && munCPT > 0){
+        munCPT--;
         timefromLastShoot = glfwGetTime();
         spriteAnimStateGun++;
         SoundEngine->play2D("sound/gun-shoot_0.wav", false);
@@ -172,6 +194,23 @@ int main() {
         bulletList.push_back(bullet);
       }
     }
+
+
+    actualTime = glfwGetTime();
+    deltaTime = actualTime-lastTime;
+    FPS++;
+    FPSstr = to_string(FPS/deltaTime);
+    fpsText.setTexte(FPSstr.c_str());
+    if(deltaTime>1.0){
+      lastTime = glfwGetTime();
+      FPS = 0;
+    }
+
+    munCPTstr = to_string(munCPT);
+    munText.setTexte(munCPTstr.c_str());
+    defaultScene.useCamera(nullptr);
+    defaultScene.Draw(munText);
+    defaultScene.Draw(fpsText);
     //////////////////////////////////////////////////////////////
     
     bbopErrorCheck();
